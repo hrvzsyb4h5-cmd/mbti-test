@@ -2405,6 +2405,15 @@ function avatarFallback(placeholderClass) {
   };
 }
 
+// 契合度头像加载失败：替换为类型字母占位符
+window.compatAvatarFail = function(img, type, color) {
+  var ph = document.createElement('div');
+  ph.className = 'compat-avatar-placeholder';
+  ph.style.cssText = 'background:linear-gradient(135deg,' + color + ',#e5e7eb);color:#fff;font-weight:700;font-size:13px;letter-spacing:0.5px';
+  ph.textContent = type;
+  img.parentNode.replaceChild(ph, img);
+};
+
 function loadAvatar(type, data) {
   // 新旧两种容器都支持
   var wrap = document.getElementById('heroAvatar') || document.getElementById('avatarWrap');
@@ -2455,13 +2464,9 @@ function renderCompat(compat, data) {
     const card = document.createElement('div');
     card.className = 'compat-card';
     const mateColor = mateData.color;
-    var tid = 'ca-' + c.type;
-    card.innerHTML = '<div class="compat-avatar" style="border-color:' + mateColor + '"><div id="' + tid + '" class="compat-avatar-placeholder" style="background:linear-gradient(135deg,' + mateData.color + ',#e5e7eb);color:#fff;font-weight:700;font-size:13px;letter-spacing:0.5px">' + c.type + '</div></div><div class="compat-ring"><canvas width="144" height="144"></canvas><div class="compat-pct">' + c.pct + '%</div></div><div class="compat-type" style="color:' + data.color + '">' + c.type + '</div><div class="compat-label">' + mateData.name + '</div>';
-    // 本地头像：avatars/类型.png，失败则保留类型字母占位符
-    var img = new Image();
-    img.onload = function() { var d = document.getElementById(tid); if (d) d.parentNode.innerHTML = '<img src="' + img.src + '" alt="' + c.type + '">'; };
-    img.onerror = function() {};
-    img.src = 'avatars/' + c.type + '.png';
+    // 本地头像：直接内联 img，失败回退类型字母占位符
+    var avatarImg = '<img src="avatars/' + c.type + '.png" alt="' + c.type + '" onerror="compatAvatarFail(this,\'' + c.type + '\',\'' + mateData.color + '\')">';
+    card.innerHTML = '<div class="compat-avatar" style="border-color:' + mateColor + '">' + avatarImg + '</div><div class="compat-ring"><canvas width="144" height="144"></canvas><div class="compat-pct">' + c.pct + '%</div></div><div class="compat-type" style="color:' + data.color + '">' + c.type + '</div><div class="compat-label">' + mateData.name + '</div>';
     // 深度解析点击
     card.addEventListener('click', function() { openCompatModal(c.type, data); });
     container.appendChild(card);
