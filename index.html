@@ -2389,14 +2389,32 @@ function showResult() {
   }, 1200);
 }
 
+// 本地头像：avatars/类型.png（或 .jpg），加载失败回退占位符
+function avatarFallback(placeholderClass) {
+  return function() {
+    var img = this;
+    if (img.dataset.tried !== 'jpg') {
+      img.dataset.tried = 'jpg';
+      img.src = img.src.replace(/\.png(\?.*)?$/, '.jpg');
+    } else {
+      var ph = document.createElement('div');
+      ph.className = placeholderClass || 'avatar-placeholder';
+      ph.textContent = '👤';
+      img.parentNode.replaceChild(ph, img);
+    }
+  };
+}
+
 function loadAvatar(type, data) {
   // 新旧两种容器都支持
-  const wrap = document.getElementById('heroAvatar') || document.getElementById('avatarWrap');
+  var wrap = document.getElementById('heroAvatar') || document.getElementById('avatarWrap');
   if (!wrap) return;
-  const cName = data.temperament === 'NT' ? '紫' : data.temperament === 'NF' ? '绿' : data.temperament === 'SJ' ? '蓝' : '橙';
-  const prompt = 'Q版可爱风格3D角色头像，' + data.avatar + '，' + type + '人格类型，' + data.name + '，柔和' + cName + '色背景，高级简洁风格，正面构图，柔和光影';
-  const url = 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=' + encodeURIComponent(prompt) + '&image_size=square_hd';
-  wrap.innerHTML = '<img src="' + url + '" alt="' + type + '头像" onerror="this.parentNode.innerHTML=\'<div class=\\\'avatar-placeholder\\\'>👤</div>\'">';
+  wrap.innerHTML = '';
+  var img = document.createElement('img');
+  img.alt = type + '头像';
+  img.src = 'avatars/' + type + '.png';
+  img.onerror = avatarFallback('avatar-placeholder');
+  wrap.appendChild(img);
 }
 
 function drawScoreRing(pct) {
@@ -2436,16 +2454,14 @@ function renderCompat(compat, data) {
     const mateData = typeData[c.type];
     const card = document.createElement('div');
     card.className = 'compat-card';
-    const cName = mateData.temperament === 'NT' ? '紫' : mateData.temperament === 'NF' ? '绿' : mateData.temperament === 'SJ' ? '蓝' : '橙';
     const mateColor = mateData.color;
-    const compatAvatarPrompt = 'Q版可爱风格3D角色头像，' + mateData.avatar + '，' + c.type + '人格类型，' + mateData.name + '，柔和' + cName + '色背景，高级简洁风格，正面构图，柔和光影';
-    const compatAvatarUrl = 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=' + encodeURIComponent(compatAvatarPrompt) + '&image_size=square_hd';
     var tid = 'ca-' + c.type;
     card.innerHTML = '<div class="compat-avatar" style="border-color:' + mateColor + '"><div id="' + tid + '" class="compat-avatar-placeholder" style="background:linear-gradient(135deg,' + mateData.color + ',#e5e7eb);color:#fff;font-weight:700;font-size:13px;letter-spacing:0.5px">' + c.type + '</div></div><div class="compat-ring"><canvas width="144" height="144"></canvas><div class="compat-pct">' + c.pct + '%</div></div><div class="compat-type" style="color:' + data.color + '">' + c.type + '</div><div class="compat-label">' + mateData.name + '</div>';
+    // 本地头像：avatars/类型.png，失败则保留类型字母占位符
     var img = new Image();
     img.onload = function() { var d = document.getElementById(tid); if (d) d.parentNode.innerHTML = '<img src="' + img.src + '" alt="' + c.type + '">'; };
     img.onerror = function() {};
-    img.src = compatAvatarUrl;
+    img.src = 'avatars/' + c.type + '.png';
     // 深度解析点击
     card.addEventListener('click', function() { openCompatModal(c.type, data); });
     container.appendChild(card);
